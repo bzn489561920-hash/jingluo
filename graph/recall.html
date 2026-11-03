@@ -1,0 +1,88 @@
+﻿<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>召回想</title>
+<style>
+  html,body { margin:0; height:100%; background:#050a10; color:#cfe3f5;
+    font:13.5px/1.7 "Microsoft YaHei",system-ui,sans-serif; overflow:hidden; }
+  #head { position:fixed; top:0; left:0; right:0; height:52px; display:flex; align-items:center;
+    gap:14px; padding:0 20px; background:linear-gradient(180deg,#0a1722f2,#0a1722cc);
+    border-bottom:1px solid rgba(120,175,215,.14); z-index:5; }
+  #head h1 { font-size:14px; font-weight:600; color:#a9d4ff; margin:0; letter-spacing:1px; }
+  #head .stat { font-size:11.5px; color:#5f7a91; }
+  #main { position:absolute; top:52px; left:0; right:0; bottom:0; display:flex; }
+  #list { width:340px; overflow:auto; border-right:1px solid rgba(120,175,215,.12); }
+  #detail { flex:1; overflow:auto; padding:16px 20px; white-space:pre-wrap; color:#b3c8db;
+    font-size:13px; line-height:1.85; }
+  .row { padding:9px 14px; border-bottom:1px solid rgba(120,175,215,.07); cursor:pointer; }
+  .row:hover { background:rgba(90,150,195,.08); }
+  .row.on { background:rgba(90,150,195,.14); }
+  .row .t { color:#587890; font-size:11px; }
+  .row .b { color:#a3b9cd; }
+  .row .b em { color:#7fb6e0; font-style:normal; }
+  ::-webkit-scrollbar { width:8px; }
+  ::-webkit-scrollbar-thumb { background:rgba(120,175,215,.18); border-radius:4px; }
+</style>
+</head>
+<body>
+<div id="head">
+  <h1>召回想</h1>
+  <span class="stat" id="stat">读日志中…</span>
+</div>
+<div id="main">
+  <div id="list"></div>
+  <div id="detail">← 点一条看那一轮到底往里塞了什么</div>
+</div>
+<script>
+let rows = [];
+const list = document.getElementById('list');
+const detail = document.getElementById('detail');
+const stat = document.getElementById('stat');
+
+function fmt(ts) {
+  const d = new Date(ts);
+  return d.toLocaleString('zh-CN', { hour12: false, month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+function preview(t) {
+  if (!t) return '(本轮没有摘要)';
+  let s = String(t).replace(/<\/?puppet_[a-z_]+>/g, '').replace(/\s+/g, ' ').trim();
+  s = s.replace(/^以下是跨会话记忆摘要[^【]*/, '').trim();
+  const m = s.match(/【最近日记】([^【]*)/);
+  if (m && m[1].trim()) return m[1].trim().slice(0, 48);
+  return s.slice(0, 48);
+}
+function render() {
+  list.innerHTML = '';
+  rows.slice().reverse().forEach((r, i) => {
+    const div = document.createElement('div');
+    div.className = 'row';
+    const total = (r.rules || 0) + (r.core || 0) + (r.state || 0) + (r.summary || 0);
+    const head = preview(r.text);
+    div.innerHTML = `<div class="t">${fmt(r.ts)}　<em>${total} 字</em></div><div class="b">${head || '(本轮没有摘要)'}</div>`;
+    div.onclick = () => {
+      [...list.children].forEach(c => c.classList.remove('on'));
+      div.classList.add('on');
+      detail.textContent = (r.text || '(这一轮没有摘要注入)') +
+        `\n\n—— 本轮注入构成 ——\n规则卡 ${r.rules || 0} 字 · 核心卡 ${r.core || 0} 字 · 状态卡 ${r.state || 0} 字 · 社交 ${r.social || 0} 字 · 摘要 ${r.summary || 0} 字`;
+    };
+    list.appendChild(div);
+  });
+  stat.textContent = `${rows.length} 轮`;
+}
+
+async function load() {
+  try {
+    const r = await fetch('/recall');
+    rows = await r.json();
+    render();
+  } catch (e) {
+    stat.textContent = '读不到日志：' + e.message;
+  }
+}
+load();
+setInterval(load, 15000);
+</script>
+</body>
+</html>
