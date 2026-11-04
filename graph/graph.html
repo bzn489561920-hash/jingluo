@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
 <meta charset="utf-8">
-<title>记忆图</title>
+<title>鲸鱼娘 · 鲸落</title>
 <style>
   html,body { margin:0; height:100%; overflow:hidden; color:#cfe3f5;
     background: radial-gradient(1200px 700px at 50% 118%, #0d2233 0%, #08131d 45%, #04080d 100%);
@@ -10,18 +10,23 @@
   canvas { display:block; }
   #hud { position:fixed; left:16px; top:14px; font-size:13px; color:#7d93a8; pointer-events:none; }
   #hud b { color:#8fd0ff; font-weight:600; }
-  #snd { position:fixed; right:22px; bottom:96px; padding:5px 11px; font-size:11.5px;
+  #dock { position:fixed; right:22px; bottom:118px; display:flex; flex-direction:column; align-items:flex-end; gap:6px; z-index:900; }
+  #snd { padding:5px 11px; font-size:11.5px;
     color:#7a93a8; background:rgba(10,18,26,.75); border:1px solid rgba(120,175,215,.16);
     border-radius:999px; cursor:pointer; letter-spacing:.5px; }
   #snd:hover { color:#cfe3f5; border-color:rgba(150,210,250,.35); }
   #snd.on { color:#9fd6ff; border-color:rgba(150,210,250,.42); }
-  #legend { position:fixed; left:16px; bottom:14px; font-size:12px; color:#6f879c; }
+  #legend { position:fixed; left:16px; bottom:14px; font-size:12.5px; color:#93aec3; }
   #legend span { display:inline-block; margin-right:14px; }
   #legend i { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; vertical-align:middle; }
-  #list { position:fixed; left:22px; top:54px; width:236px; max-height:62vh; overflow:auto;
+  #list { position:fixed; left:22px; top:54px; width:250px; max-height:62vh; overflow:auto;
     background:linear-gradient(180deg, rgba(12,22,32,.90), rgba(8,15,23,.94));
     border:1px solid rgba(120,175,215,.16); border-radius:14px; padding:10px;
     box-shadow:0 14px 38px rgba(0,0,0,.42); backdrop-filter:blur(5px); }
+  #lhead { display:flex; gap:6px; align-items:center; }
+  #ltoggle { flex:0 0 auto; width:22px; height:22px; border-radius:6px; border:1px solid rgba(120,175,215,.25); background:transparent; color:#7e97ad; cursor:pointer; line-height:1; }
+  #ltoggle:hover { color:#cfe3f5; }
+  #lopen { display:none; position:fixed; left:0; top:54px; width:18px; height:44px; border:1px solid rgba(120,175,215,.18); border-left:0; border-radius:0 8px 8px 0; background:rgba(12,22,32,.9); color:#7e97ad; cursor:pointer; }
   #list::-webkit-scrollbar { width:7px; }
   #list::-webkit-scrollbar-thumb { background:rgba(120,175,215,.16); border-radius:4px; }
   #q { width:100%; box-sizing:border-box; background:rgba(10,18,26,.9);
@@ -29,10 +34,10 @@
        padding:6px 9px; font-size:12.5px; margin-bottom:8px; outline:none; }
   #q::placeholder { color:#4f667c; }
   #q:focus { border-color:rgba(150,210,250,.38); }
-  #items div { font-size:12px; padding:5px 7px; border-radius:7px; cursor:pointer;
+  #items div { font-size:12.5px; padding:6px 8px; border-radius:7px; cursor:pointer;
     color:#a3b9cd; line-height:1.5; }
   #items div:hover { background:rgba(90,150,195,.13); color:#e2f1ff; }
-  #items div i { color:#4f6b83; font-style:normal; margin-right:7px; font-size:10.5px; }
+  #items div i { color:#7d9ab2; font-style:normal; margin-right:7px; font-size:10.5px; }
   #card { position:fixed; right:22px; top:18px; width:360px; max-height:76vh; overflow:auto;
     background:linear-gradient(180deg, rgba(12,22,32,.93), rgba(8,15,23,.97));
     border:1px solid rgba(120,175,215,.20); border-radius:14px; padding:16px 18px 18px;
@@ -61,27 +66,73 @@
   #srctext::-webkit-scrollbar-thumb { background:rgba(120,175,215,.16); border-radius:4px; }
   #card::-webkit-scrollbar { width:8px; }
   #card::-webkit-scrollbar-thumb { background:rgba(120,175,215,.18); border-radius:4px; }
-</style>
+  #legend .lg-row { display:block; margin-bottom:3px; }
+  #legend .lg-shape { color:#8aa6bb; font-size:11.5px; }
+  #legend .sh { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; vertical-align:middle; }
+  #legend .sh-hollow { border:1.4px solid #ffd479; }
+  #legend .sh-solid { background:#8fb4cc; }
+  #legend .sh-dash { border:1.2px dashed #8fb4cc; }
+  #legend .sh-arc { background:#8fb4cc; box-shadow:2.2px 0 0 -0.4px #8fb4cc; }
+  #helpbtn { position:fixed; right:22px; top:18px; width:24px; height:24px; border-radius:50%;
+    border:1px solid rgba(150,200,235,.28); background:rgba(13,22,29,.85); color:#9fc0d8;
+    font-size:13px; cursor:pointer; z-index:950; line-height:1; }
+  #helpbtn:hover { color:#e0f0ff; border-color:rgba(150,200,235,.5); }
+  #helpbox { display:none; position:fixed; right:22px; top:50px; width:340px; z-index:960;
+    background:linear-gradient(180deg, rgba(12,22,32,.98), rgba(8,15,23,.99));
+    border:1px solid rgba(150,200,235,.22); border-radius:12px; padding:14px 16px;
+    box-shadow:0 18px 48px rgba(0,0,0,.55); font-size:12.5px; color:#c4d6e4; line-height:1.65; }
+  #helpbox p { margin:0 0 9px; }
+  #helpbox b { color:#ffd479; font-weight:600; }
+  #helpbox .hb-title { display:flex; justify-content:space-between; align-items:center;
+    font-size:12px; letter-spacing:.6px; color:#7f9cb3; margin-bottom:10px; }
+  #helpclose { cursor:pointer; color:#6b869c; font-size:16px; }
+  #helpbox .hb-foot { color:#7f9cb3; font-size:11.5px; margin-bottom:0; }
+  #tip { display:none; position:fixed; left:50%; transform:translateX(-50%); bottom:52px; z-index:940;
+    background:rgba(13,22,29,.94); border:1px solid rgba(150,200,235,.24); border-radius:999px;
+    padding:7px 8px 7px 16px; font-size:12px; color:#b8cddd; align-items:center; gap:12px; }
+  #tip b { cursor:pointer; color:#ffd479; font-weight:500; padding:3px 11px;
+    border:1px solid rgba(255,212,121,.3); border-radius:999px; }</style>
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="hud">记忆图 · <b id="n">0</b> 条 ｜ 外圈=约 · 内圈=名字 · 中间=记忆星云 · 底边=日子 · <b id="rt" style="cursor:pointer;text-decoration:underline dotted">本轮想起来的</b> · 滚轮缩放 · 拖动平移</div>
-<button id="snd" title="声音">· 静音</button>
-<button id="tier" style="position:fixed;right:22px;bottom:132px;padding:5px 11px;font-size:11.5px;background:transparent;color:#7c93a8;border:1px solid rgba(150,200,235,.18);border-radius:6px;cursor:pointer" title="会忘 / 不会忘">· 全部</button>
-<div id="legend">
-  <span><i style="background:#ffd479"></i>约</span>
-  <span><i style="background:#8fd0ff"></i>名字</span>
-  <span><i style="background:#5aa9e6"></i>关系</span>
-  <span><i style="background:#66d39a"></i>档案</span>
-  <span><i style="background:#d3a86b"></i>笔记</span>
-  <span><i style="background:#b98bd3"></i>便签</span>
-  <span><i style="background:#4a6272"></i>日子</span>
+<div id="hud">鲸落 · <b id="n">0</b> 条 ｜ 外圈=约 · 内圈=名字 · 中间=记忆星云 · 底边=日子 · <b id="rt" style="cursor:pointer;text-decoration:underline dotted">本轮想起来的</b> · 滚轮缩放 · 拖动平移</div>
+<div id="dock"><button id="snd" title="声音">· 静音</button>
+<button id="fading" style="padding:5px 11px;font-size:11.5px;background:transparent;color:#7c93a8;border:1px solid rgba(150,200,235,.18);border-radius:6px;cursor:pointer" title="按寿命排，最前面就是快忘掉的">· 快忘掉的</button>
+<button id="tier" style="padding:5px 11px;font-size:11.5px;background:transparent;color:#7c93a8;border:1px solid rgba(150,200,235,.18);border-radius:6px;cursor:pointer" title="会忘 / 不会忘">· 全部</button>
 </div>
+<div id="legend">
+  <div class="lg-row">
+    <span><i style="background:#ffd479"></i>约</span>
+    <span><i style="background:#8fd0ff"></i>名字</span>
+    <span><i style="background:#5aa9e6"></i>关系</span>
+    <span><i style="background:#66d39a"></i>档案</span>
+    <span><i style="background:#d3a86b"></i>笔记</span>
+    <span><i style="background:#b98bd3"></i>便签</span>
+    <span><i style="background:#4a6272"></i>日子</span>
+  </div>
+  <div class="lg-row lg-shape">
+    <span><b class="sh sh-hollow"></b>不会忘</span>
+    <span><b class="sh sh-solid"></b>会淡</span>
+    <span><b class="sh sh-dash"></b>快忘了</span>
+    <span><b class="sh sh-arc"></b>常用</span>
+  </div>
+</div>
+<button id="helpbtn" title="怎么看这张图">?</button>
+<div id="helpbox">
+  <div class="hb-title"><span>怎么看</span><span id="helpclose">×</span></div>
+  <p><b>颜色看类别</b>：金色约、浅蓝名字、蓝关系、绿档案、土黄笔记、紫便签、灰日子。</p>
+  <p><b>亮度看寿命</b>：越久没被写、没被取用就越淡；快忘的会暗下去，但不会消失。</p>
+  <p><b>形状看状态</b>：空心圈＝不会忘，实心点＝会淡，虚线圈＝快忘了，右侧短弧＝常被想起。</p>
+  <p><b>位置看分区</b>：外圈是约和名字，中间一片记忆星云，底下那条横河是日子。</p>
+  <p><b>点一下</b>看全文和被取用过几次；<b>滚轮</b>缩放，放大后标签才会多起来。</p>
+  <p class="hb-foot">右下角「快忘掉的」，按还剩多少清晰度排队给你看。</p>
+</div>
+<div id="tip"><span>点节点看详情；越淡表示越久没用。</span><b id="tipclose">知道了</b></div>
 
-<div id="rbp" style="position:fixed; right:22px; bottom:150px; display:none; padding:5px 11px;
+<div id="rbp" style="position:fixed; right:22px; top:64px; display:none; padding:5px 11px;
       font-size:11.5px; color:#c8ae78; background:rgba(24,18,8,.82); border:1px solid rgba(255,212,121,.32);
       border-radius:999px; cursor:pointer; letter-spacing:.4px;">想起来 · 展开</div>
-<div id="rb" style="position:fixed; right:22px; bottom:150px; width:300px; max-height:46vh; overflow:auto;
+<div id="rb" style="position:fixed; right:22px; top:64px; width:300px; max-height:46vh; overflow:auto;
   display:block; background:linear-gradient(180deg, rgba(12,22,32,.95), rgba(8,15,23,.97));
   border:1px solid rgba(255,212,121,.28); border-radius:12px; padding:10px 12px;
   box-shadow:0 16px 40px rgba(0,0,0,.5);">
@@ -92,7 +143,8 @@
   <div id="rbi"></div>
 </div>
 
-<div id="list"><input id="q" placeholder="搜标题…"><div id="items"></div></div>
+<div id="list"><div id="lhead"><input id="q" placeholder="搜标题…"><button id="ltoggle" title="收起">‹</button></div><div id="items"></div></div>
+<button id="lopen" title="展开列表">›</button>
 <div id="card">
   <div class="bar"></div>
   <button id="cx" title="关">×</button>
@@ -105,6 +157,7 @@
 <script src="graph-data.js"></script>
 <script>
 const DATA = window.GRAPH;
+const __JBASE = new URLSearchParams(location.search).get('prefix') || ''
 const c = document.getElementById('c'), ctx = c.getContext('2d');
 const card = document.getElementById('card');
 document.getElementById('n').textContent = DATA.nodes.length;
@@ -173,13 +226,15 @@ DATA.nodes.forEach((n, i) => {
   n.amp = n.role === 'river' ? 1.6 : n.role === 'covenant' ? 5 : n.role === 'name' ? 4 : 7 + (i % 5) * 1.6;
   n.spd = 0.055 + (i % 7) * 0.011;             // 极慢
 });
+// 嵌进宿主的浮窗时，路径要带前缀（?prefix=/jingluo）
 let TIER_ONLY = "";
+let FADING_ON = false;
 DATA.nodes.filter(n => n.pinned).forEach(n => {
   n.r = n.role === 'covenant' ? 6 : n.role === 'name' ? 7 : 3;
 });
 
 let cam = { x: 0, y: 0, k: 1 };
-const ART = ['me.png', 'art2.png', 'art3.png', 'art4.png', 'art5.png'].map(src => {
+const ART = [__JBASE + '/me.png', __JBASE + '/art2.png', __JBASE + '/art3.png', __JBASE + '/art4.png', __JBASE + '/art5.png'].map(src => {
   const img = new Image();
   img.src = src;
   img.ok = false;
@@ -232,12 +287,6 @@ function driftAll(time) {
     const a = time * n.spd + n.ph;
     if (n.baseA !== undefined) {
       // 约那一圈慢慢转，名字那圈更慢
-      document.getElementById('tier').onclick = (ev) => {
-  TIER_ONLY = TIER_ONLY === 'decay' ? 'full' : TIER_ONLY === 'full' ? '' : 'decay';
-  const t = ev.currentTarget;
-  t.textContent = TIER_ONLY === 'decay' ? '· 只看会忘的' : TIER_ONLY === 'full' ? '· 只看不会忘的' : '· 全部';
-  t.style.color = TIER_ONLY ? '#e0b96b' : '#7c93a8';
-};
 const spin = (n.role === 'covenant' ? 0.028 : 0.012) * time;
       const ang = n.baseA + spin;
       n.px = Math.cos(ang) * n.ringR + Math.cos(a) * n.amp * 0.4;
@@ -248,6 +297,19 @@ const spin = (n.role === 'covenant' ? 0.028 : 0.012) * time;
     n.py = n.y + Math.sin(a * 0.9) * n.amp * 0.8 + Math.cos(a * 1.3) * n.amp * 0.25;
   }
 }
+
+      const listEl = document.getElementById('list');
+const lOpen = document.getElementById('lopen');
+const setList = (on) => { listEl.style.display = on ? 'block' : 'none'; lOpen.style.display = on ? 'none' : 'block'; if (on) { try { localStorage.setItem('listOpen', '1'); } catch {} } else { try { localStorage.setItem('listOpen', '0'); } catch {} } };
+if (document.getElementById('ltoggle')) document.getElementById('ltoggle').onclick = () => setList(false);
+if (lOpen) lOpen.onclick = () => setList(true);
+try { if (localStorage.getItem('listOpen') === '0') setList(false); } catch {}
+document.getElementById('tier').onclick = (ev) => {
+  TIER_ONLY = TIER_ONLY === 'decay' ? 'protected' : TIER_ONLY === 'protected' ? '' : 'decay';
+  const t = ev.currentTarget;
+  t.textContent = TIER_ONLY === 'decay' ? '· 只看会忘的' : TIER_ONLY === 'protected' ? '· 只看不会忘的' : '· 全部';
+  t.style.color = TIER_ONLY ? '#e0b96b' : '#7c93a8';
+};
 
 function draw(ts) {
   const time = (ts || 0) / 1000;
@@ -304,10 +366,10 @@ function draw(ts) {
   }
 
   // 细小的悬浮物：往上飘
-  for (let i = 0; i < 26; i++) {
+  for (let i = 0; i < 12; i++) {
     const sx = ((i * 97.3 + time * (6 + (i % 5) * 2)) % (W + 40)) - 20;
     const sy = H - ((i * 173.7 + time * (10 + (i % 7) * 3)) % (H + 40));
-    ctx.fillStyle = 'rgba(180,220,245,.10)';
+    ctx.fillStyle = 'rgba(180,220,245,.07)';
     ctx.beginPath(); ctx.arc(sx, sy, 0.9 + (i % 3) * 0.5, 0, Math.PI * 2); ctx.fill();
   }
 
@@ -385,30 +447,34 @@ function draw(ts) {
       const i = Math.floor(time / span) % ready.length;
       const j = (i + 1) % ready.length;
       const mix = t > span - fade ? (t - (span - fade)) / fade : 0;
-      const breathe2 = 0.78 + Math.sin(time * 0.5) * 0.06;
+      const breathe2 = 0.88 + Math.sin(time * 0.5) * 0.02;
 
+      // 画在离屏画布上再用径向遮罩抠边：图清楚，边化开，且不会糊一层黑盖住节点
       const drawArt = (img, alpha) => {
         if (!img || !img.ok || alpha <= 0.001) return;
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(0, 0, R, 0, Math.PI * 2);
-        ctx.clip();
-        // 画本身偏暗，提一点亮度再画，不然在黑水里看不出
-        ctx.filter = 'brightness(1.45) saturate(1.05) contrast(1.05)';
-        ctx.globalAlpha = alpha;
+        const size = Math.max(64, Math.round(R * 2));
+        if (!drawArt.cv) drawArt.cv = document.createElement('canvas');
+        const cv = drawArt.cv;
+        if (cv.width !== size) { cv.width = size; cv.height = size; }
+        const c2 = cv.getContext('2d');
+        c2.clearRect(0, 0, size, size);
         const iw = img.width, ih = img.height;
-        const sc = Math.max((R * 2) / iw, (R * 2) / ih);
-        ctx.drawImage(img, -iw * sc / 2, -ih * sc / 2, iw * sc, ih * sc);
-        ctx.filter = 'none';
-        // 边缘化开，别是硬照片
-        const fade = ctx.createRadialGradient(0, 0, R * 0.55, 0, 0, R);
-        fade.addColorStop(0, 'rgba(4,10,16,0)');
-        fade.addColorStop(1, 'rgba(4,10,16,0.95)');
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = fade;
-        ctx.beginPath();
-        ctx.arc(0, 0, R, 0, Math.PI * 2);
-        ctx.fill();
+        const sc = Math.max(size / iw, size / ih);
+        c2.filter = 'brightness(1.18) saturate(1.04)';
+        c2.drawImage(img, (size - iw * sc) / 2, (size - ih * sc) / 2, iw * sc, ih * sc);
+        c2.filter = 'none';
+        // 只保留中间那块，边缘用遮罩吃掉（destination-in 不会留黑）
+        c2.globalCompositeOperation = 'destination-in';
+        const mg = c2.createRadialGradient(size / 2, size / 2, size * 0.20, size / 2, size / 2, size * 0.5);
+        mg.addColorStop(0, 'rgba(0,0,0,1)');
+        mg.addColorStop(0.68, 'rgba(0,0,0,0.92)');
+        mg.addColorStop(1, 'rgba(0,0,0,0)');
+        c2.fillStyle = mg;
+        c2.fillRect(0, 0, size, size);
+        c2.globalCompositeOperation = 'source-over';
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.drawImage(cv, -R, -R, size, size);
         ctx.restore();
       };
 
@@ -448,7 +514,7 @@ function draw(ts) {
     return w(p) - w(q);
   });
   for (const n of order) {
-    if (TIER_ONLY && n.tier !== TIER_ONLY) continue;
+    if (TIER_ONLY && n.displayTier !== TIER_ONLY) continue;
     const base = n.role === 'covenant' ? '#ffd479' : n.role === 'name' ? '#8fd0ff' : (COLOR[n.layer] || '#6b7a8c');
     const hot = n === hover || n === chosen;
 
@@ -456,8 +522,8 @@ function draw(ts) {
     let life = 1;
     if (n.role === 'core' || n.role === 'river') {
       const ageDays = n.ts ? (Date.now() - new Date(n.ts).getTime()) / 86400000 : 30;
-      const fresh = Math.exp(-Math.max(ageDays, 0) / 6);
-      const used = Math.min(n.use || 0, 5) / 5;
+      const fresh = Math.exp(-Math.LN2 * Math.max(ageDays, 0) / 6);   // 六天半衰期
+      const used = Math.min(n.useCount != null ? n.useCount : (n.use || 0), 5) / 5;
       life = 0.30 + 0.45 * fresh + 0.35 * used;
       life = Math.min(life, 1.15);
     }
@@ -472,8 +538,12 @@ function draw(ts) {
     const px = n.px, py = n.py;
     // 这一轮被想起来的：亮环
     if (recalled.has(n.id)) {
-      ctx.strokeStyle = 'rgba(255,220,150,.65)';
-      ctx.lineWidth = 1.6 / cam.k;
+      // 这一轮被想起来的：先垫一层柔光，再压一道细金线（垫层是为了在亮背景上不糊）
+      ctx.strokeStyle = 'rgba(255,205,130,.16)';
+      ctx.lineWidth = 4.5 / cam.k;
+      ctx.beginPath(); ctx.arc(px, py, rr * 2.6 + 3, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,226,168,.8)';
+      ctx.lineWidth = 1.5 / cam.k;
       ctx.beginPath(); ctx.arc(px, py, rr * 2.6 + 3, 0, Math.PI * 2); ctx.stroke();
     }
     // 今天写的，套一圈
@@ -482,7 +552,7 @@ function draw(ts) {
       ctx.lineWidth = 1.2 / cam.k;
       ctx.beginPath(); ctx.arc(px, py, rr * 1.9, 0, Math.PI * 2); ctx.stroke();
     }
-    if (n.tier === 'full') {
+    if (n.displayTier === 'protected') {
       // 全量层：永不衰减，画成空心金圈（不会忘的东西不该被画成一团光）
       ctx.globalAlpha = 1;
       ctx.strokeStyle = base;
@@ -492,6 +562,22 @@ function draw(ts) {
       ctx.fillStyle = base;
       ctx.globalAlpha = n.voided ? 0.35 : Math.min(life, 1);
       ctx.beginPath(); ctx.arc(px, py, rr * 0.62, 0, Math.PI * 2); ctx.fill();
+      // 快忘的：外面套一圈虚线（不靠颜色也能看出来）
+      if (life < 0.45) {
+        ctx.globalAlpha = n.voided ? 0.25 : 0.85;
+        ctx.strokeStyle = 'rgba(226,240,250,.72)';   // 白一点，密的地方也认得出
+        ctx.lineWidth = Math.max(1.1, rr * 0.24);
+        ctx.setLineDash([1.4 / cam.k, 2.0 / cam.k]);
+        ctx.beginPath(); ctx.arc(px, py, rr * 1.32, 0, Math.PI * 2); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      // 一直在用的：实心外面再加一小段弧，像被翻得起毛的边
+      else if ((n.useCount || 0) >= 20) {
+        ctx.globalAlpha = 0.55;
+        ctx.strokeStyle = base;
+        ctx.lineWidth = Math.max(1, rr * 0.22);
+        ctx.beginPath(); ctx.arc(px, py, rr * 1.2, -0.9, 0.9); ctx.stroke();
+      }
     }
     ctx.globalAlpha = 1;
   }
@@ -569,13 +655,14 @@ function draw(ts) {
     for (const n of DATA.nodes) {
       const want = n.role === 'covenant' || n.role === 'name'
         || n === hover || n === chosen
-        || (cam.k > 1.05 && (n.r > 5 || n.role === 'river'));
+        || (cam.k > 0.85 && (n.useCount || 0) >= 5)
+        || (cam.k > 1.35 && (n.r > 5 || n.role === 'river'));
       if (!want) continue;
-      if (TIER_ONLY && n.tier !== TIER_ONLY) continue;
+      if (TIER_ONLY && n.displayTier !== TIER_ONLY) continue;
       ctx.fillStyle = n.role === 'covenant' ? 'rgba(255,226,175,.82)'
         : n.role === 'name' ? 'rgba(180,222,255,.9)'
         : n.role === 'river' ? 'rgba(130,170,195,.55)'
-        : 'rgba(176,200,220,.55)';
+        : 'rgba(198,218,236,.72)';
       // 叠字检测：附近已经有标签就让开
       const lx = n.px + n.r + 5 / cam.k, ly = n.py + 3 / cam.k;
       let clash = false;
@@ -600,7 +687,7 @@ function draw(ts) {
     ctx.beginPath(); ctx.arc(mouse.x, mouse.y, 90, 0, Math.PI * 2); ctx.fill();
   }
 
-  // 右下角的印
+  // 右下角的印：鲸落
   {
     const px = W - 74, py = H - 74;
     ctx.save();
@@ -625,7 +712,7 @@ function draw(ts) {
     ctx.fillStyle = 'rgba(150,205,235,.22)';
     ctx.font = '300 13px "Microsoft YaHei",sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('记忆', 0, 26);
+    ctx.fillText('鲸落', 0, 26);
     ctx.restore();
   }
 }
@@ -665,8 +752,17 @@ function showCard(n) {
   const dot = document.getElementById('dot');
   dot.style.background = n.role === 'covenant' ? '#ffd479' : n.role === 'name' ? '#8fd0ff' : (COLOR[n.layer] || '#6b7a8c');
   document.getElementById('role').textContent = (roleTxt ? roleTxt.replace(' · ', '') : (LABEL[n.layer] || n.layer));
+  // 使用统计：只认召回想日志里真进过上下文的（见设计说明第六节）
+  const usedN = n.useCount != null ? n.useCount : (n.use || 0);
+  let usedTxt = usedN > 0 ? ('进过上下文 ' + usedN + ' 次') : '还没进过上下文';
+  if (n.lastUsedAt) {
+    const d = new Date(n.lastUsedAt);
+    const days = Math.floor((Date.now() - d.getTime()) / 86400000);
+    const ago = days <= 0 ? '今天' : days + ' 天前';
+    usedTxt += '　上次 ' + d.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' }) + '（' + ago + '）';
+  }
   card.querySelector('.m').textContent =
-    when + '　命中 ' + (n.use || 0) + (n.voided ? '　已标废' : '');
+    when + '　' + usedTxt + (n.voided ? '　已标废' : '');
   const p = card.querySelector('p');
   p.textContent = n.snippet || '(空)';
   // 正文里点了本地文件？给个"原文"
@@ -679,8 +775,8 @@ function showCard(n) {
     box.style.display = 'block';
     btn.textContent = '原文 →  ' + mm[0].split('\\').pop();
     btn.onclick = () => {
-      const rel = mm[0].replace(/^[A-Za-z]:\\[^\\]+\\/, '');
-      fetch('/src?p=' + encodeURIComponent(rel)).then(r => r.text()).then(t => {
+      const rel = mm[0].replace(/^[A-Za-z]:\\魔法鲸鱼\\/, '');
+      fetch(__JBASE + '/src?p=' + encodeURIComponent(rel)).then(r => r.text()).then(t => {
         pre.textContent = t.slice(0, 200000);
         pre.style.display = 'block';
       }).catch(() => { pre.textContent = '打不开。'; pre.style.display = 'block'; });
@@ -688,12 +784,12 @@ function showCard(n) {
   } else {
     box.style.display = 'none';
     // 没有路径就按标题找同名原文
-    fetch('/find?q=' + encodeURIComponent(n.title || '')).then(r => r.json()).then(list => {
+    fetch(__JBASE + '/find?q=' + encodeURIComponent(n.title || '')).then(r => r.json()).then(list => {
       if (!list || !list.length) return;
       box.style.display = 'block';
       btn.textContent = '原文 →  ' + list[0].split('\\').pop();
       btn.onclick = () => {
-        fetch('/src?p=' + encodeURIComponent(list[0])).then(r => r.text()).then(t => {
+        fetch(__JBASE + '/src?p=' + encodeURIComponent(list[0])).then(r => r.text()).then(t => {
           pre.textContent = t.slice(0, 200000);
           pre.style.display = 'block';
         }).catch(() => { pre.textContent = '打不开。'; pre.style.display = 'block'; });
@@ -702,7 +798,7 @@ function showCard(n) {
   }
 
   if (n.path) {
-    fetch('/md?p=' + encodeURIComponent(n.path)).then(r => r.text()).then(t => {
+    fetch(__JBASE + '/md?p=' + encodeURIComponent(n.path)).then(r => r.text()).then(t => {
       const body = t.replace(/^---\n[\s\S]*?\n---/, '').replace(/^\s*#\s.*$/m, '').replace(/^\s*\n/, '').trim();
       p.textContent = body || '(空)';
     }).catch(() => {});
@@ -824,7 +920,7 @@ let recalled = new Set();
 let recallRound = null;
 async function loadRecall() {
   try {
-    const rows = await (await fetch('/recall')).json();
+    const rows = await (await fetch(__JBASE + '/recall')).json();
     if (!rows || !rows.length) return;
     const last = rows[rows.length - 1];
     recallRound = last;
@@ -885,22 +981,55 @@ function renderRecallBox() {
   const list = DATA.nodes.filter(n => recalled.has(n.id));
   if (!list.length) { box.innerHTML = '<div style="color:#5f7a91;font-size:12px">(这一轮没对上，可能都是日记)</div>'; return; }
   for (const n of list) {
-    const d = document.createElement('div');
-    d.style.cssText = 'font-size:12.5px;padding:4px 6px;border-radius:6px;cursor:pointer;color:#d9c39a';
-    d.textContent = (n.role === 'covenant' && !n.title.startsWith('约') ? '约 · ' : '') + n.title.slice(0, 22);
-    const why = (recallRound && recallRound.why) ? recallRound.why[String(n.id)] : '';
-    if (why) {
-      const w = document.createElement('div');
-      w.style.cssText = 'font-size:10.5px;color:#6f8aa4;margin:-2px 0 4px 6px;line-height:1.35';
-      w.textContent = '↳ ' + why;
-      d.style.marginBottom = '2px';
-      d.textContent = d.textContent;
-      d.appendChild(w);
+    const row = document.createElement('div');
+    row.style.cssText = 'padding:5px 6px;border-radius:7px;cursor:pointer';
+    const head = document.createElement('div');
+    head.style.cssText = 'font-size:12.5px;color:#d9c39a;display:flex;align-items:center;gap:6px';
+    // 状态徽标：形状 + 字，不靠颜色
+    const badge = document.createElement('span');
+    const heavy = (n.useCount || 0) >= 20;
+    badge.textContent = n.displayTier === 'protected' ? '◯' : (heavy ? '◍' : '●');
+    badge.title = n.displayTier === 'protected' ? '不会忘' : (heavy ? '一直在用' : '会衰减');
+    badge.style.cssText = 'flex:0 0 auto;font-size:10px;color:' + (n.displayTier === 'protected' ? '#ffd479' : '#8fb4cc');
+    const name = document.createElement('span');
+    name.textContent = (n.role === 'covenant' && !n.title.startsWith('约') ? '约 · ' : '') + n.title.slice(0, 18);
+    name.style.cssText = 'flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+    head.appendChild(badge);
+    head.appendChild(name);
+    // 元信息只留最要紧的三个数
+    const meta = document.createElement('div');
+    meta.className = 'rc-meta';
+    const usedN = n.useCount || 0;
+    let last = '';
+    if (n.lastUsedAt) {
+      const d2 = new Date(n.lastUsedAt);
+      const dd = Math.floor((Date.now() - d2.getTime()) / 86400000);
+      last = dd <= 0 ? '今天' : dd + ' 天前';
     }
-    d.onmouseenter = () => d.style.background = 'rgba(255,212,121,.10)';
-    d.onmouseleave = () => d.style.background = 'transparent';
-    d.onclick = () => { chosen = n; showCard(n); flyTo(n); };
-    box.appendChild(d);
+    meta.textContent = (usedN ? usedN + ' 次' : '没用过') + (last ? ' · 上次 ' + last : '') +
+      (n.displayTier === 'protected' ? ' · 不会忘' : '');
+    meta.style.cssText = 'font-size:10.5px;color:#9a8a6b;margin-left:16px;line-height:1.35';
+    const why = (recallRound && recallRound.why) ? recallRound.why[String(n.id)] : '';
+    let detail = null;
+    if (why) {
+      detail = document.createElement('div');
+      detail.style.cssText = 'display:none;font-size:10.5px;color:#6f8aa4;margin:2px 0 0 16px;line-height:1.4';
+      detail.textContent = '↳ ' + why;
+    }
+    row.appendChild(head);
+    row.appendChild(meta);
+    if (detail) row.appendChild(detail);
+    row.onmouseenter = () => { row.style.background = 'rgba(255,212,121,.10)'; };
+    row.onmouseleave = () => { row.style.background = 'transparent'; };
+    let open = false;
+    row.onclick = () => {
+      // 点一下展开原因，再点收起；双击是看全文
+      if (!detail) { chosen = n; showCard(n); flyTo(n); return; }
+      open = !open;
+      detail.style.display = open ? 'block' : 'none';
+    };
+    row.ondblclick = () => { chosen = n; showCard(n); flyTo(n); };
+    box.appendChild(row);
   }
 }
 document.getElementById('rt').onclick = () => {
@@ -934,6 +1063,7 @@ function flyTo(n) {
   cam.x = -n.x * cam.k; cam.y = -n.y * cam.k;
 }
 function fillList(kw) {
+  if (FADING_ON) return;
   const k = (kw || '').trim();
   const list = DATA.nodes
     .filter(n => !k || n.title.includes(k) || (n.snippet || '').includes(k))
@@ -948,7 +1078,62 @@ function fillList(kw) {
     items.appendChild(d);
   }
 }
-qEl.addEventListener('input', () => fillList(qEl.value));
+const fadingBtn = document.getElementById('fading');
+if (fadingBtn) {
+  // 用顶层 FADING_ON，才能挡住定时刷新把列表冲掉
+  // 和画点那边同一套公式：越久没被用、越没被想起，life 越低
+  const lifeOf = (n) => {
+    if (n.role !== 'core' && n.role !== 'river') return 9;
+    const ageDays = n.ts ? (Date.now() - new Date(n.ts).getTime()) / 86400000 : 30;
+    const fresh = Math.exp(-Math.LN2 * Math.max(ageDays, 0) / 6);   // 六天半衰期
+    const used = Math.min(n.useCount != null ? n.useCount : (n.use || 0), 5) / 5;
+    return 0.30 + 0.45 * fresh + 0.35 * used;
+  };
+  const renderFading = () => {
+    const list = DATA.nodes
+      .filter((n) => n.role === 'core' || n.role === 'river')
+      .map((n) => ({ n, life: lifeOf(n) }))
+      .sort((a, b) => a.life - b.life)
+      .slice(0, 40);
+    items.innerHTML = '<div style="font-size:11px;color:#6f8aa4;padding:2px 4px 6px">快忘掉的（越上面越淡）</div>';
+    for (const { n, life } of list) {
+      const d = document.createElement('div');
+      const pct = Math.round((life / 1.15) * 100);
+      d.innerHTML = '<i>' + pct + '%</i>' + n.title.slice(0, 15);
+      d.style.opacity = String(0.45 + 0.55 * (life / 1.15));
+      d.onclick = () => { chosen = n; showCard(n); flyTo(n); };
+      items.appendChild(d);
+    }
+  };
+  fadingBtn.onclick = () => {
+    FADING_ON = !FADING_ON;
+    fadingBtn.style.color = FADING_ON ? '#e0b96b' : '#7c93a8';
+    if (FADING_ON) { setList(true); renderFading(); }
+    else { fillList(qEl.value); }
+  };
+}
+{
+  // —— 就地说明：帮助浮层 + 首次提示 ——
+  const hb = document.getElementById('helpbtn');
+  const help = document.getElementById('helpbox');
+  const hc = document.getElementById('helpclose');
+  const tip = document.getElementById('tip');
+  const tipBtn = document.getElementById('tipclose');
+  if (hb && help) {
+    hb.onclick = () => { help.style.display = help.style.display === 'block' ? 'none' : 'block'; };
+    if (hc) hc.onclick = () => { help.style.display = 'none'; };
+  }
+  if (tip) {
+    let seen = false;
+    try { seen = localStorage.getItem('tipSeen') === '1'; } catch (e) {}
+    if (!seen) setTimeout(() => { tip.style.display = 'flex'; }, 1200);
+    if (tipBtn) tipBtn.onclick = () => {
+      tip.style.display = 'none';
+      try { localStorage.setItem('tipSeen', '1'); } catch (e) {}
+    };
+  }
+}
+qEl.addEventListener('input', () => { if (FADING_ON) return; fillList(qEl.value); });
 
 resize();
 layoutPinned();
