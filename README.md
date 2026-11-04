@@ -272,3 +272,7 @@ node graph/emit-recall.mjs "用户这一轮说的话"
 插件会往 `记忆图/recall-log.jsonl` 写召回日志，格式就是第七节那个。图一开就有内容，不用另外喂。
 
 不想装插件、只想要图：跳过这一节，用第七节的 `emit-recall.mjs`。
+
+**快忘的样子**：虚线圈就是"寿命掉到 45% 以下"的节点，一眼能挑出来。
+
+![快忘的节点](screens/fading-ring.jpg)
